@@ -18,7 +18,11 @@ const EVENT_HANDLERS = Object.freeze({
   WebSocketClosedEvent: 'socketClosed',
   LyricsLineEvent: 'lyricsLine',
   LyricsFoundEvent: 'lyricsFound',
-  LyricsNotFoundEvent: 'lyricsNotFound'
+  LyricsNotFoundEvent: 'lyricsNotFound',
+  SegmentsLoaded: 'segmentsLoaded',
+  SegmentSkipped: 'segmentSkipped',
+  ChaptersLoaded: 'chaptersLoaded',
+  ChapterStarted: 'chapterStarted'
 })
 
 const WATCHDOG_INTERVAL = 15000
@@ -771,6 +775,22 @@ class Player extends EventEmitter {
 
   async lyricsNotFound(player, track, payload) {
     !this.destroyed && this.aqua.emit(AqualinkEvents.LyricsNotFound, this, track, payload)
+  }
+
+  async segmentsLoaded(player, track, payload) {
+    !this.destroyed && this.aqua.emit(AqualinkEvents.SegmentsLoaded, this, track, payload)
+  }
+
+  async segmentSkipped(player, track, payload) {
+    !this.destroyed && this.aqua.emit(AqualinkEvents.SegmentSkipped, this, track, payload)
+  }
+
+  async chaptersLoaded(player, track, payload) {
+    !this.destroyed && this.aqua.emit(AqualinkEvents.ChaptersLoaded, this, track, payload)
+  }
+
+  async chapterStarted(player, track, payload) {
+    !this.destroyed && this.aqua.emit(AqualinkEvents.ChapterStarted, this, track, payload)
   }
 
   _handleAquaPlayerMove(oldChannel, newChannel) {
