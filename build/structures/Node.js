@@ -10,6 +10,8 @@ const WS_PATH = '/v4/websocket'
 const OPEN_BRACE = 123
 const LYRICS_PREFIX = 'Lyrics'
 const LYRICS_PREFIX_LEN = LYRICS_PREFIX.length
+const SPONSORBLOCK_PREFIX = 'SponsorBlock'
+const SPONSORBLOCK_PREFIX_LEN = SPONSORBLOCK_PREFIX.length
 
 const DEFAULT_REGIONS = {
   'asia': ['hongkong', 'singapore', 'japan', 'india', 'seoul', 'mumbai', 'bangkok', 'jakarta', 'manila', 'dubai', 'taiwan', 'malaysia', 'vietnam', 'mongolia', 'kazakhstan', 'uzbekistan', 'kyrgyzstan', 'tajikistan', 'turkmenistan', 'afghanistan', 'pakistan', 'bangladesh', 'sri-lanka', 'nepal', 'bhutan', 'maldives', 'myanmar', 'laos', 'cambodia', 'brunei', 'east-timor', 'china', 'north-korea'],
@@ -43,6 +45,9 @@ const _functions = Object.freeze({
   },
   isLyricsOp(op) {
     return typeof op === 'string' && op.length >= LYRICS_PREFIX_LEN && op.startsWith(LYRICS_PREFIX)
+  },
+  isSponsorBlockOp(op) {
+    return typeof op === 'string' && op.length >= SPONSORBLOCK_PREFIX_LEN && op.startsWith(SPONSORBLOCK_PREFIX)
   },
   reasonToString(reason) {
     if (!reason) return 'No reason provided'
@@ -228,6 +233,29 @@ class Node {
     if (_functions.isLyricsOp(op)) {
       const player = payload.guildId ? this.aqua?.players?.get?.(payload.guildId) : null
       this.aqua.emit(op, player, payload.track || null, payload)
+      return
+    }
+
+    if (_functions.isSponsorBlockOp(op)) {
+      const player = payload.guildId ? this.aqua?.players?.get?.(payload.guildId) : null
+      
+      let eventName = op
+      switch (op) {
+        case 'SponsorBlockSegmentsLoaded':
+          eventName = 'segmentsLoaded'
+          break
+        case 'SponsorBlockSegmentSkipped':
+          eventName = 'segmentSkipped'
+          break
+        case 'SponsorBlockChaptersLoaded':
+          eventName = 'chaptersLoaded'
+          break
+        case 'SponsorBlockChapterStarted':
+          eventName = 'chapterStarted'
+          break
+      }
+      
+      this.aqua.emit(eventName, player, payload.track || null, payload)
       return
     }
 
