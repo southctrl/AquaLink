@@ -428,6 +428,18 @@ class Rest {
     }
   }
 
+  async getSponsorBlock(guildId) {
+    return this.makeRequest('GET', `${this._getSessionPath()}/players/${guildId}/sponsorblock/categories`)
+  }
+
+  async setSponsorBlock(guildId, categories) {
+    return this.makeRequest('PUT', `${this._getSessionPath()}/players/${guildId}/sponsorblock/categories`, categories)
+  }
+
+  async deleteSponsorBlock(guildId) {
+    return this.makeRequest('DELETE', `${this._getSessionPath()}/players/${guildId}/sponsorblock/categories`)
+  }
+
   destroy() {
     if (this.agent) {
       this.agent.destroy()
