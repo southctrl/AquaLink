@@ -143,7 +143,7 @@ class Node {
       frameStats: { sent: 0, nulled: 0, deficit: 0 }
     }
 
-    this._clientName = `Aqua/${this.aqua.version} https://github.com/ToddyTheNoobDud/AquaLink`
+    this._clientName = `Aqualink/${this.aqua.version}`
     this._headers = this._buildHeaders()
 
     this._boundHandlers = Object.freeze({
@@ -491,3 +491,4 @@ class Node {
 }
 
 module.exports = Node
+
