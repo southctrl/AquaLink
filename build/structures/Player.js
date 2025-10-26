@@ -39,11 +39,31 @@ const PREVIOUS_IDS_MAX = 20
 const AUTOPLAY_MAX = 3
 const BATCHER_POOL_SIZE = 2
 const INVALID_LOADS = new Set(['error', 'empty', 'LOAD_FAILED', 'NO_MATCHES'])
+const DEFAULT_EQUALIZER = [
+  { band: 0, gain: 0.0 },
+  { band: 1, gain: 0.0 },
+  { band: 2, gain: 0.0 },
+  { band: 3, gain: 0.0 },
+  { band: 4, gain: 0.0 },
+  { band: 5, gain: 0.0 },
+  { band: 6, gain: 0.0 },
+  { band: 7, gain: 0.0 },
+  { band: 8, gain: 0.0 },
+  { band: 9, gain: 0.0 },
+  { band: 10, gain: 0.0 },
+  { band: 11, gain: 0.0 },
+  { band: 12, gain: 0.0 },
+  { band: 13, gain: 0.0 }
+]
 
 const _functions = {
   clamp: v => {
     const num = +v
     return Number.isNaN(num) ? 100 : num < 0 ? 0 : num > 200 ? 200 : num
+  },
+  clampGain: v => {
+    const num = +v
+    return Number.isNaN(num) ? 0 : num < -0.25 ? -0.25 : num > 1.0 ? 1.0 : num
   },
   randIdx: len => Math.random() * len | 0,
   toId: v => v?.id || v || null,
@@ -192,14 +212,12 @@ class Player extends EventEmitter {
     this._resuming = !!options.resuming
     this._voiceWatchdogTimer = null
     this._dataStore = null
-
     this.volume = _functions.clamp(options.defaultVolume || 100)
     this.loop = this._parseLoop(options.loop)
-
+    this.equalizer = JSON.parse(JSON.stringify(DEFAULT_EQUALIZER))
     const aquaOpts = aqua.options || {}
     this.shouldDeleteMessage = !!aquaOpts.shouldDeleteMessage
     this.leaveOnEnd = !!aquaOpts.leaveOnEnd
-
     this.connection = new Connection(this)
     this.filters = new Filters(this)
     this.queue = new Queue()
@@ -294,6 +312,68 @@ class Player extends EventEmitter {
     return this
   }
 
+  setEqualizer(bands) {
+    if (this.destroyed) return this
+    
+    if (!Array.isArray(bands)) {
+      throw new TypeError('Equalizer bands must be an array')
+    }
+
+    const validBands = []
+    for (let i = 0; i < bands.length && i < 14; i++) {
+      const band = bands[i]
+      if (band && typeof band === 'object' && 'band' in band && 'gain' in band) {
+        validBands.push({
+          band: Math.max(0, Math.min(13, band.band)),
+          gain: _functions.clampGain(band.gain)
+        })
+      }
+    }
+
+    if (validBands.length > 0) {
+      this.equalizer = validBands
+      this.batchUpdatePlayer({
+        guildId: this.guildId,
+        equalizer: this.equalizer
+      })
+    }
+
+    return this
+  }
+
+  getEqualizer() {
+    return JSON.parse(JSON.stringify(this.equalizer))
+  }
+
+  resetEqualizer() {
+    return this.setEqualizer(DEFAULT_EQUALIZER)
+  }
+
+  setEqualizerBand(band, gain) {
+    if (this.destroyed) return this
+    
+    if (band < 0 || band > 13) {
+      throw new RangeError('Band must be between 0 and 13')
+    }
+
+    const clampedGain = _functions.clampGain(gain)
+    const existingBandIndex = this.equalizer.findIndex(b => b.band === band)
+    
+    if (existingBandIndex >= 0) {
+      this.equalizer[existingBandIndex].gain = clampedGain
+    } else {
+      this.equalizer.push({ band, gain: clampedGain })
+      this.equalizer.sort((a, b) => a.band - b.band)
+    }
+
+    this.batchUpdatePlayer({
+      guildId: this.guildId,
+      equalizer: this.equalizer
+    })
+
+    return this
+  }
+
   async play() {
     if (this.destroyed || !this.connected || !this.queue.size) return this
     const item = this.queue.dequeue()
@@ -304,7 +384,31 @@ class Player extends EventEmitter {
       this.playing = true
       this.paused = false
       this.position = 0
-      await this.batchUpdatePlayer({guildId: this.guildId, track: { encoded: this.current.track} }, true)
+      await this.batchUpdatePlayer({
+        guildId: this.guildId,
+        encodedTrack: this.current.track,
+        userData: {
+          requester: this.current.requester || this.current.info?.requester || null
+        },
+        filters: {
+          equalizer: [
+            { band: 0, gain: 0.0 },
+            { band: 1, gain: 0.0 },
+            { band: 2, gain: 0.0 },
+            { band: 3, gain: 0.0 },
+            { band: 4, gain: 0.0 },
+            { band: 5, gain: 0.0 },
+            { band: 6, gain: 0.0 },
+            { band: 7, gain: 0.0 },
+            { band: 8, gain: 0.0 },
+            { band: 9, gain: 0.0 },
+            { band: 10, gain: 0.0 },
+            { band: 11, gain: 0.0 },
+            { band: 12, gain: 0.0 },
+            { band: 13, gain: 0.0 }
+          ]
+        }
+      }, true)
       return this
     } catch (error) {
       this.aqua.emit(AqualinkEvents.Error, error)
