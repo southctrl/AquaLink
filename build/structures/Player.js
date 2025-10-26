@@ -857,11 +857,7 @@ class Player extends EventEmitter {
   }
 
   send(data) {
-    try {
-      this.aqua.send({op: 4, d: data})
-    } catch (err) {
-      this.aqua.emit(AqualinkEvents.Error, new Error(`Send fail: ${err.message}`))
-    }
+    this.aqua.send({op: 4, d: data})
   }
 
   set(key, value) {
