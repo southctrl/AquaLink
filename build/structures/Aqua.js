@@ -6,6 +6,7 @@ const Connection = require('./Connection')
 const Queue = require('./Queue')
 const Filters = require('./Filters')
 const { spAutoPlay, scAutoPlay } = require('../handlers/autoplay')
+const Node = require('./Node')
 
 const LOOP_MODES = Object.freeze({ NONE: 0, TRACK: 1, QUEUE: 2 })
 const LOOP_MODE_NAMES = Object.freeze(['none', 'track', 'queue'])
@@ -158,6 +159,118 @@ class CircularBuffer {
     }
     result.length = idx
     return result
+  }
+}
+
+class Aqua extends EventEmitter {
+  constructor(clientId, nodes = [], options = {}, sendGatewayMessage) {
+    super()
+    if (!clientId) throw new TypeError('Client ID is required')
+    if (typeof sendGatewayMessage !== 'function') throw new TypeError('sendGatewayMessage function is required')
+
+    this.clientId = clientId
+    this.nodes = new Map()
+    this.players = new Map()
+    this.options = options
+    this.version = require('../../package.json').version
+    this._sendGatewayMessage = sendGatewayMessage
+
+    for (const node of nodes) this.addNode(node)
+  }
+
+  addNode(nodeOptions) {
+    const node = new Node(this, nodeOptions)
+    this.nodes.set(node.name, node)
+    return node
+  }
+
+  removeNode(name) {
+    const node = this.nodes.get(name)
+    if (node) {
+      node.destroy()
+      this.nodes.delete(name)
+    }
+  }
+
+  getLeastUsedNode(region) {
+    const connectedNodes = [...this.nodes.values()].filter(node => node.connected)
+    if (!connectedNodes.length) throw new Error('No connected nodes available')
+
+    let filteredNodes = connectedNodes
+    if (region) {
+      const regionLower = region.toLowerCase()
+      filteredNodes = connectedNodes.filter(node =>
+        node.regions.some(r => r.toLowerCase().includes(regionLower))
+      )
+      if (!filteredNodes.length) {
+        this.emit(AqualinkEvents.Debug, 'Aqua', `No nodes found for region: ${region}. Falling back to all connected nodes.`)
+        filteredNodes = connectedNodes
+      }
+    }
+
+    return filteredNodes.sort((a, b) => {
+      const aLoad = a.stats.players / a.stats.cpu.cores
+      const bLoad = b.stats.players / b.stats.cpu.cores
+      return aLoad - bLoad
+    })[0]
+  }
+
+  async createConnection(options) {
+    const { guildId, voiceChannel, textChannel, deaf, mute, defaultVolume, vcRegion } = options
+    if (this.players.has(guildId)) return this.players.get(guildId)
+
+    const node = this.getLeastUsedNode(vcRegion)
+    if (!node) throw new Error('No available nodes to connect to.')
+
+    const player = new Player(this, node, {
+      guildId, voiceChannel, textChannel, deaf, mute, defaultVolume
+    })
+    this.players.set(guildId, player)
+    player.connect()
+    return player
+  }
+
+  destroyPlayer(guildId) {
+    const player = this.players.get(guildId)
+    if (player) {
+      player.destroy()
+      this.players.delete(guildId)
+    }
+  }
+
+  send(data) {
+    try {
+      this._sendGatewayMessage(data)
+    } catch (err) {
+      this.emit(AqualinkEvents.Error, new Error(`Failed to send Discord gateway message: ${err.message}`))
+    }
+  }
+
+  handleNodeFailover(failedNode) {
+    this.emit(AqualinkEvents.Debug, 'Aqua', `Node ${failedNode.name} failed. Attempting to reassign players.`)
+    for (const player of this.players.values()) {
+      if (player.nodes.name === failedNode.name) {
+        this.emit(AqualinkEvents.Debug, 'Aqua', `Reassigning player ${player.guildId} from ${failedNode.name}`)
+        player.destroy({ preserveClient: true, skipRemote: true })
+        this.createConnection({
+          guildId: player.guildId,
+          voiceChannel: player.voiceChannel,
+          textChannel: player.textChannel,
+          deaf: player.deaf,
+          mute: player.mute,
+          defaultVolume: player.volume,
+          vcRegion: player.connection.region // Use the player's last known VC region
+        }).catch(err => {
+          this.emit(AqualinkEvents.Error, new Error(`Failed to reassign player ${player.guildId}: ${err.message}`))
+        })
+      }
+    }
+  }
+
+  async resolve(options) {
+    const node = this.getLeastUsedNode(options.vcRegion) // Pass vcRegion to node selection
+    if (!node) throw new Error('No available nodes to resolve tracks.')
+    return node.rest.resolve(options)
   }
 }
 
@@ -794,4 +907,4 @@ class Player extends EventEmitter {
   }
 }
 
-module.exports = Player
+module.exports = Player;
