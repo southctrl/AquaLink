@@ -62,7 +62,12 @@ class Node {
     this.port = connOptions.port || 2333
     this.auth = connOptions.auth || 'youshallnotpass'
     this.sessionId = connOptions.sessionId || null
-    this.regions = connOptions.regions || []
+    this.regions = connOptions.regions || [
+      'us-central', 'us-east', 'us-west', 'us-south',
+      'eu-central', 'eu-west', 'eu-south', 'eu-north',
+      'asia-central', 'asia-south', 'singapore', 'hongkong', 'japan', 'sydney',
+      'brazil', 'india', 'southafrica'
+    ]
     this.ssl = !!connOptions.ssl
     this.wsUrl = _functions.buildWsUrl(this.host, this.port, this.ssl)
 
