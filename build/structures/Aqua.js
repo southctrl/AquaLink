@@ -272,6 +272,13 @@ class Aqua extends EventEmitter {
     if (!node) throw new Error('No available nodes to resolve tracks.')
     return node.rest.resolve(options)
   }
+
+  updateVoiceState(data) {
+    const player = this.players.get(data.d.guild_id);
+    if (player) {
+      player.connection.setStateUpdate(data.d);
+    }
+  }
 }
 
 class Player extends EventEmitter {
