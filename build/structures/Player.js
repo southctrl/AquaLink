@@ -307,7 +307,20 @@ class Player extends EventEmitter {
       this.playing = true
       this.paused = false
       this.position = 0
-      await this.batchUpdatePlayer({guildId: this.guildId, track: { encoded: this.current.track} }, true)
+
+      const bands = Array.from({length: 14}, (_, i) => ({band: i, gain: 0.0}));
+      const trackPayload = {
+        encoded: this.current.track,
+        userData: {
+          requester: this.current.requester
+        },
+        volume: this.volume,
+        position: this.position,
+        filters: {
+          equalizer: bands
+        }
+      };
+      await this.batchUpdatePlayer({guildId: this.guildId, track: trackPayload}, true)
       return this
     } catch (error) {
       this.aqua.emit(AqualinkEvents.Error, error)
