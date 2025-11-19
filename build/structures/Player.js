@@ -232,6 +232,34 @@ class Player extends EventEmitter {
     this.aqua.on('playerMove', this._boundPlayerMove)
   }
 
+  async _setVoiceStatus(track) {
+    if (!this.aqua?.voice?.enabled || !this.voiceChannel) return;
+
+    try {
+      const voiceChannel = this.aqua.client.channels.cache.get(this.voiceChannel);
+      if (!voiceChannel) return;
+
+      const guild = voiceChannel.guild;
+      const botMember = guild.members.cache.get(this.aqua.client.user.id);
+
+      if (botMember?.permissions.has('ManageChannels')) {
+        let statusMessage = '';
+        if (track && this.aqua.voice.message) {
+          statusMessage = this.aqua.voice.message
+            .replace(/{song}/g, track.info?.title || 'Unknown Song')
+            .replace(/{artist}/g, track.info?.author || 'Unknown Artist');
+        }
+
+        await this.aqua.client.rest.put(`/channels/${this.voiceChannel}/voice-status`, {
+          body: { status: statusMessage }
+        });
+        this.aqua._emitDebug(`Voice status updated for guild ${this.guildId} to: ${statusMessage}`);
+      }
+    } catch (error) {
+      this.aqua._emitError(`Error updating voice status for guild ${this.guildId}: ${error.message}`);
+    }
+  }
+
   _startWatchdog() {
     this._voiceWatchdogTimer = setInterval(() => this._voiceWatchdog(), WATCHDOG_INTERVAL)
     _functions.safeUnref(this._voiceWatchdogTimer)
@@ -411,6 +439,7 @@ class Player extends EventEmitter {
     this._reconnecting = false
     this._lastVoiceChannel = this.voiceChannel
     this.voiceChannel = null
+    this._setVoiceStatus(null); 
 
     if (this.shouldDeleteMessage && this.nowPlayingMessage) {
       _functions.safeDel(this.nowPlayingMessage)
@@ -529,6 +558,7 @@ class Player extends EventEmitter {
     this.connected = false
     this.voiceChannel = null
     this.send({guild_id: this.guildId, channel_id: null})
+    this._setVoiceStatus(null); 
     return this
   }
 
@@ -656,10 +686,12 @@ class Player extends EventEmitter {
     this.playing = true
     this.paused = false
     this.aqua.emit(AqualinkEvents.TrackStart, this, track)
+    this._setVoiceStatus(track); 
   }
 
   async trackEnd(player, track, payload) {
     if (this.destroyed) return
+    this._setVoiceStatus(null); 
 
     const reason = payload?.reason
     const isFailure = reason === 'loadFailed' || reason === 'cleanup'
