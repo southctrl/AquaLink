@@ -63,10 +63,7 @@ class Node {
     this.port = connOptions.port || 2333
     this.auth = connOptions.auth || 'youshallnotpass'
     this.sessionId = connOptions.sessionId || null
-
-    this.nodeBalancer = NodeBalancers.includes(connOptions.nodeBalancer)
-      ? connOptions.nodeBalancer
-      : NodeBalancers[0]
+    this.regions = connOptions.regions || []
     this.ssl = !!connOptions.ssl
     this.wsUrl = _functions.buildWsUrl(this.host, this.port, this.ssl)
 
