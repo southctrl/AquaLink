@@ -2,9 +2,9 @@
 
 const fs = require('node:fs')
 const readline = require('node:readline')
-const {EventEmitter} = require('tseep')
-const {AqualinkEvents} = require('./AqualinkEvents')
-const {Platforms} = require('../utils/platforms')
+const { EventEmitter } = require('tseep')
+const { AqualinkEvents } = require('./AqualinkEvents')
+const { Platforms } = require('../utils/platforms')
 const Node = require('./Node')
 const Player = require('./Player')
 const Track = require('./Track')
