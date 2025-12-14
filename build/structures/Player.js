@@ -7,7 +7,6 @@ const Connection = require('./Connection')
 const Filters = require('./Filters')
 const { spAutoPlay, scAutoPlay } = require('../handlers/autoplay')
 const Queue = require('./Queue')
-const { VCRegions } = require('./region')
 
 const LOOP_MODES = Object.freeze({ NONE: 0, TRACK: 1, QUEUE: 2 })
 const LOOP_MODE_NAMES = Object.freeze(['none', 'track', 'queue'])
@@ -201,7 +200,6 @@ class Player extends EventEmitter {
     this.guildId = options.guildId
     this.textChannel = options.textChannel
     this.voiceChannel = options.voiceChannel
-    this.vcRegion = VCRegions.includes(options.vcRegion) ? options.vcRegion : null
 
     this.playing = this.paused = this.connected = this.destroyed = false
     this.isAutoplayEnabled = this.isAutoplay = false
@@ -252,9 +250,6 @@ class Player extends EventEmitter {
     this.on('event', this._boundEvent)
     this.aqua.on('playerMove', this._boundPlayerMove)
   }
-    isValidVCRegion() {
-      return !!this.vcRegion && VCRegions.includes(this.vcRegion);
-    }
 
   _startWatchdog() {
     this._voiceWatchdogTimer = setInterval(() => this._voiceWatchdog(), WATCHDOG_INTERVAL)
@@ -919,3 +914,4 @@ class Player extends EventEmitter {
 }
 
 module.exports = Player
+
