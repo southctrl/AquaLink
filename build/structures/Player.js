@@ -1,7 +1,6 @@
 
 
 'use strict'
-const { VCRegions } = require('./region')
 
 const { EventEmitter } = require('tseep')
 const { AqualinkEvents } = require('./AqualinkEvents')
@@ -154,9 +153,6 @@ class CircularBuffer {
 }
 
 class Player extends EventEmitter {
-  static get VCRegions() {
-    return VCRegions;
-  }
   getPlayerState() {
     const bands = Array.from({ length: 14 }, (_, band) => ({ band, gain: 0.0 }))
     const volume = this.volume
@@ -206,8 +202,6 @@ class Player extends EventEmitter {
     this.guildId = options.guildId
     this.textChannel = options.textChannel
     this.voiceChannel = options.voiceChannel
-    this.region = options.region && VCRegions.includes(options.region) ? options.region : null;
-
     this.playing = this.paused = this.connected = this.destroyed = false
     this.isAutoplayEnabled = this.isAutoplay = false
     this.autoplaySeed = this.current = this.nowPlayingMessage = null
@@ -238,9 +232,6 @@ class Player extends EventEmitter {
 
     this._bindEvents()
     this._startWatchdog()
-    if (this.region && !VCRegions.includes(this.region)) {
-      throw new Error(`Invalid region: ${this.region}`);
-    }
   }
 
   _parseLoop(loop) {
@@ -924,3 +915,4 @@ class Player extends EventEmitter {
 }
 
 module.exports = Player
+
