@@ -1,4 +1,6 @@
+
 'use strict'
+const { VCRegions } = require('./region')
 
 const WebSocket = require('ws')
 const Rest = require('./Rest')
@@ -56,14 +58,22 @@ class Node {
   static INFINITE_BACKOFF = 10000
 
   constructor(aqua, connOptions, options = {}) {
+
     this.aqua = aqua
+    this.region = connOptions.region && VCRegions.includes(connOptions.region) ? connOptions.region : null;
 
     this.host = connOptions.host || 'localhost'
     this.name = connOptions.name || this.host
+    if (this.region && !VCRegions.includes(this.region)) {
+      throw new Error(`Invalid region: ${this.region}`);
+    }
     this.port = connOptions.port || 2333
     this.auth = connOptions.auth || 'youshallnotpass'
     this.sessionId = connOptions.sessionId || null
-    this.regions = connOptions.regions || []
+
+    this.nodeBalancer = NodeBalancers.includes(connOptions.nodeBalancer)
+      ? connOptions.nodeBalancer
+      : NodeBalancers[0]
     this.ssl = !!connOptions.ssl
     this.wsUrl = _functions.buildWsUrl(this.host, this.port, this.ssl)
 
