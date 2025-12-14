@@ -1,5 +1,8 @@
 'use strict'
 
+const { VCRegions } = require('./region')
+'use strict'
+
 const WebSocket = require('ws')
 const Rest = require('./Rest')
 const { AqualinkEvents } = require('./AqualinkEvents')
@@ -63,7 +66,14 @@ class Node {
     this.port = connOptions.port || 2333
     this.auth = connOptions.auth || 'youshallnotpass'
     this.sessionId = connOptions.sessionId || null
-    this.regions = connOptions.regions || []
+
+    this.regions = Array.isArray(connOptions.regions)
+      ? connOptions.regions.filter(r => VCRegions.includes(r))
+      : []
+
+    this.nodeBalancer = NodeBalancers.includes(connOptions.nodeBalancer)
+      ? connOptions.nodeBalancer
+      : NodeBalancers[0]
     this.ssl = !!connOptions.ssl
     this.wsUrl = _functions.buildWsUrl(this.host, this.port, this.ssl)
 
