@@ -158,16 +158,33 @@ class Player extends EventEmitter {
     let user = null
     if (this.current && this.current.requester) {
       const req = this.current.requester
-      user = {
-        username: req.username || req.tag || req.name || null,
-        id: req.id || null
+      user = {}
+      for (const key in req) {
+        try {
+          user[key] = req[key]
+        } catch {}
       }
+
+      if (!user.id && req.id) user.id = req.id
+      if (!user.username && (req.username || req.tag || req.name)) user.username = req.username || req.tag || req.name
+      if (!user.discriminator && (req.discriminator || req.discrim)) user.discriminator = req.discriminator || req.discrim
+      if (!user.tag && req.username && req.discriminator) user.tag = `${req.username}#${req.discriminator}`
+      if (!user.avatar && req.avatar) user.avatar = req.avatar
+      if (!user.displayAvatarURL && (req.displayAvatarURL || req.avatarURL)) user.displayAvatarURL = req.displayAvatarURL || req.avatarURL
+      if (typeof user.bot === 'undefined' && typeof req.bot !== 'undefined') user.bot = req.bot
+      if (typeof user.system === 'undefined' && typeof req.system !== 'undefined') user.system = req.system
+      if (!user.publicFlags && req.publicFlags) user.publicFlags = req.publicFlags
+      if (!user.flags && req.flags) user.flags = req.flags
+      if (!user.accentColor && (req.accentColor || req.accent_colour)) user.accentColor = req.accentColor || req.accent_colour
+      if (!user.banner && req.banner) user.banner = req.banner
+      if (!user.createdAt && req.createdAt) user.createdAt = req.createdAt
+      if (!user.createdTimestamp && req.createdTimestamp) user.createdTimestamp = req.createdTimestamp
     }
     return {
       bands,
       volume,
       position,
-      user
+      user,
     }
   }
   static LOOP_MODES = LOOP_MODES
