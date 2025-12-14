@@ -344,7 +344,15 @@ class Player extends EventEmitter {
       this.playing = true
       this.paused = false
       this.position = 0
-      await this.batchUpdatePlayer({ guildId: this.guildId, track: { encoded: this.current.track } }, true)
+      const state = this.getPlayerState()
+      await this.batchUpdatePlayer({
+        guildId: this.guildId,
+        track: { encoded: this.current.track },
+        bands: state.bands,
+        volume: state.volume,
+        position: state.position,
+        user: state.user
+      }, true)
       return this
     } catch (error) {
       this.aqua.emit(AqualinkEvents.Error, error)
@@ -475,7 +483,14 @@ class Player extends EventEmitter {
     const len = this.current?.info?.length || 0
     const clamped = len ? Math.min(Math.max(position, 0), len) : Math.max(position, 0)
     this.position = clamped
-    this.batchUpdatePlayer({ guildId: this.guildId, position: clamped }, true).catch(() => { })
+    const state = this.getPlayerState()
+    this.batchUpdatePlayer({
+      guildId: this.guildId,
+      position: clamped,
+      bands: state.bands,
+      volume: state.volume,
+      user: state.user
+    }, true).catch(() => { })
     return this
   }
 
@@ -483,7 +498,15 @@ class Player extends EventEmitter {
     if (this.destroyed || !this.playing) return this
     this.playing = this.paused = false
     this.position = 0
-    this.batchUpdatePlayer({ guildId: this.guildId, track: { encoded: null } }, true).catch(() => { })
+    const state = this.getPlayerState()
+    this.batchUpdatePlayer({
+      guildId: this.guildId,
+      track: { encoded: null },
+      bands: state.bands,
+      volume: state.volume,
+      position: state.position,
+      user: state.user
+    }, true).catch(() => { })
     return this
   }
 
@@ -491,7 +514,14 @@ class Player extends EventEmitter {
     const vol = _functions.clamp(volume)
     if (this.destroyed || this.volume === vol) return this
     this.volume = vol
-    this.batchUpdatePlayer({ guildId: this.guildId, volume: vol }).catch(() => { })
+    const state = this.getPlayerState()
+    this.batchUpdatePlayer({
+      guildId: this.guildId,
+      volume: vol,
+      bands: state.bands,
+      position: state.position,
+      user: state.user
+    }).catch(() => { })
     return this
   }
 
