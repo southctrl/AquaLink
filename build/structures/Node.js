@@ -1,6 +1,5 @@
 
 'use strict'
-const { VCRegions } = require('./region')
 
 const WebSocket = require('ws')
 const Rest = require('./Rest')
@@ -60,13 +59,8 @@ class Node {
   constructor(aqua, connOptions, options = {}) {
 
     this.aqua = aqua
-    this.region = connOptions.region && VCRegions.includes(connOptions.region) ? connOptions.region : null;
-
     this.host = connOptions.host || 'localhost'
     this.name = connOptions.name || this.host
-    if (this.region && !VCRegions.includes(this.region)) {
-      throw new Error(`Invalid region: ${this.region}`);
-    }
     this.port = connOptions.port || 2333
     this.auth = connOptions.auth || 'youshallnotpass'
     this.sessionId = connOptions.sessionId || null
@@ -467,3 +461,4 @@ class Node {
 }
 
 module.exports = Node
+
