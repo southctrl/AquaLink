@@ -9,6 +9,7 @@ const Rest = require("./structures/Rest");
 const Track = require("./structures/Track");
 const { AqualinkEvents } = require("./structures/AqualinkEvents");
 const { Platforms, PlatformNames, PlatformAliases, PlatformPatterns, PlatformUtils } = require("./structures/platforms");
+const { VCRegions } = require("./structures/region");
 
 module.exports = {
 	Connection,
@@ -25,5 +26,6 @@ module.exports = {
 	PlatformNames,
 	PlatformAliases,
 	PlatformPatterns,
-	PlatformUtils
+	PlatformUtils,
+    VCRegions
 };
