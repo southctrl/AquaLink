@@ -867,6 +867,11 @@ class Player extends EventEmitter {
       }
     }
 
+    if (payload && payload.code === 4014) {
+      aqua.emit(AqualinkEvents.Debug, this, `[Player] Received 4014 (Disconnected/Moved). Stopping auto-reconnect to allow Voice Server Update or cleanup.`)
+      return;
+    }
+  
     tryReconnect(1)
   }
 
