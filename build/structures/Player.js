@@ -1,5 +1,3 @@
-
-
 'use strict'
 
 const { EventEmitter } = require('tseep')
@@ -920,4 +918,3 @@ class Player extends EventEmitter {
 }
 
 module.exports = Player
-
